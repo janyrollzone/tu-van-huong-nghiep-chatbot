@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/chat_message.dart';
 import '../services/gemini_chat_service.dart';
@@ -84,6 +85,13 @@ class _ChatPageState extends State<ChatPage> {
     appBar: AppBar(
       title: const Text('Tư vấn hướng nghiệp THPT'),
       centerTitle: false,
+      actions: [
+        IconButton(
+          onPressed: () => Supabase.instance.client.auth.signOut(),
+          tooltip: 'Đăng xuất',
+          icon: const Icon(Icons.logout),
+        ),
+      ],
     ),
     body: SafeArea(
       child: Center(

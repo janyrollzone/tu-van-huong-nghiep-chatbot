@@ -140,10 +140,21 @@ class _AuthPageState extends State<AuthPage> {
                         onPressed: _loading
                             ? null
                             : () => _run(() async {
-                                await Supabase.instance.client.auth.signUp(
-                                  email: _email.text.trim(),
-                                  password: _password.text,
-                                );
+                                final response = await Supabase
+                                    .instance
+                                    .client
+                                    .auth
+                                    .signUp(
+                                      email: _email.text.trim(),
+                                      password: _password.text,
+                                    );
+                                if (response.session == null) {
+                                  await Supabase.instance.client.auth
+                                      .signInWithPassword(
+                                        email: _email.text.trim(),
+                                        password: _password.text,
+                                      );
+                                }
                               }),
                         child: const Text('Tạo tài khoản mới'),
                       ),
