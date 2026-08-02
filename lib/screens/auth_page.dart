@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthPage extends StatefulWidget {
   const AuthPage({super.key});
+
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
@@ -10,13 +11,34 @@ class AuthPage extends StatefulWidget {
 class _AuthPageState extends State<AuthPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _confirmPassword = TextEditingController();
   bool _loading = false;
+  bool _isRegistering = false;
   String? _error;
+
   @override
   void dispose() {
     _email.dispose();
     _password.dispose();
+    _confirmPassword.dispose();
     super.dispose();
+  }
+
+  bool _validate({required bool includeConfirmation}) {
+    final email = _email.text.trim();
+    if (!email.contains('@')) {
+      setState(() => _error = 'Vui lòng nhập địa chỉ email hợp lệ.');
+      return false;
+    }
+    if (_password.text.length < 6) {
+      setState(() => _error = 'Mật khẩu cần có ít nhất 6 ký tự.');
+      return false;
+    }
+    if (includeConfirmation && _password.text != _confirmPassword.text) {
+      setState(() => _error = 'Xác nhận mật khẩu chưa trùng khớp.');
+      return false;
+    }
+    return true;
   }
 
   Future<void> _run(Future<void> Function() action) async {
@@ -27,10 +49,8 @@ class _AuthPageState extends State<AuthPage> {
     });
     try {
       await action();
-    } on AuthException catch (e) {
-      if (mounted) {
-        setState(() => _error = e.message);
-      }
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _error = error.message);
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Không thể kết nối. Vui lòng thử lại.');
@@ -40,9 +60,43 @@ class _AuthPageState extends State<AuthPage> {
     }
   }
 
+  Future<void> _signIn() async {
+    if (!_validate(includeConfirmation: false)) return;
+    await _run(
+      () => Supabase.instance.client.auth.signInWithPassword(
+        email: _email.text.trim(),
+        password: _password.text,
+      ),
+    );
+  }
+
+  Future<void> _signUp() async {
+    if (!_validate(includeConfirmation: true)) return;
+    await _run(() async {
+      final response = await Supabase.instance.client.auth.signUp(
+        email: _email.text.trim(),
+        password: _password.text,
+      );
+      if (response.session == null && mounted) {
+        setState(() {
+          _error = 'Tài khoản đã tạo. Hãy xác nhận email trước khi đăng nhập.';
+          _isRegistering = false;
+        });
+      }
+    });
+  }
+
+  void _showRegisterForm() {
+    setState(() {
+      _isRegistering = true;
+      _error = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final title = _isRegistering ? 'Tạo tài khoản' : 'Định hướng tương lai';
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -58,6 +112,7 @@ class _AuthPageState extends State<AuthPage> {
         ),
         child: Center(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
               child: Card(
@@ -81,13 +136,15 @@ class _AuthPageState extends State<AuthPage> {
                       ),
                       const SizedBox(height: 18),
                       Text(
-                        'Định hướng tương lai',
+                        title,
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Trợ lý hướng nghiệp dành cho học sinh THPT',
+                        _isRegistering
+                            ? 'Tạo tài khoản để lưu phiên tư vấn của bạn'
+                            : 'Trợ lý hướng nghiệp dành cho học sinh THPT',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
@@ -111,6 +168,18 @@ class _AuthPageState extends State<AuthPage> {
                           border: OutlineInputBorder(),
                         ),
                       ),
+                      if (_isRegistering) ...[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _confirmPassword,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Xác nhận mật khẩu',
+                            prefixIcon: Icon(Icons.lock_reset_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
                       if (_error != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
@@ -126,62 +195,63 @@ class _AuthPageState extends State<AuthPage> {
                         child: FilledButton.icon(
                           onPressed: _loading
                               ? null
-                              : () => _run(() async {
-                                  await Supabase.instance.client.auth
-                                      .signInWithPassword(
-                                        email: _email.text.trim(),
-                                        password: _password.text,
-                                      );
-                                }),
-                          icon: const Icon(Icons.login),
-                          label: const Text('Đăng nhập'),
+                              : (_isRegistering ? _signUp : _signIn),
+                          icon: Icon(
+                            _isRegistering
+                                ? Icons.person_add_alt_1
+                                : Icons.login,
+                          ),
+                          label: Text(
+                            _isRegistering
+                                ? 'Đăng ký và vào chat'
+                                : 'Đăng nhập',
+                          ),
                         ),
                       ),
                       TextButton(
                         onPressed: _loading
                             ? null
-                            : () => _run(() async {
-                                final response = await Supabase
-                                    .instance
-                                    .client
-                                    .auth
-                                    .signUp(
-                                      email: _email.text.trim(),
-                                      password: _password.text,
-                                    );
-                                if (response.session == null) {
-                                  await Supabase.instance.client.auth
-                                      .signInWithPassword(
-                                        email: _email.text.trim(),
-                                        password: _password.text,
-                                      );
+                            : () {
+                                if (_isRegistering) {
+                                  setState(() {
+                                    _isRegistering = false;
+                                    _error = null;
+                                  });
+                                } else {
+                                  _showRegisterForm();
                                 }
-                              }),
-                        child: const Text('Tạo tài khoản mới'),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Divider(),
-                      ),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _loading
-                              ? null
-                              : () => _run(() async {
-                                  await Supabase.instance.client.auth
-                                      .signInAnonymously();
-                                }),
-                          icon: const Icon(Icons.person_outline),
-                          label: const Text('Dùng với tư cách khách'),
+                              },
+                        child: Text(
+                          _isRegistering
+                              ? 'Quay lại đăng nhập'
+                              : 'Tạo tài khoản mới',
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Chế độ khách không lưu hồ sơ của bạn.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
+                      if (!_isRegistering) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8),
+                          child: Divider(),
+                        ),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _loading
+                                ? null
+                                : () => _run(
+                                    () => Supabase.instance.client.auth
+                                        .signInAnonymously(),
+                                  ),
+                            icon: const Icon(Icons.person_outline),
+                            label: const Text('Dùng với tư cách khách'),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Chế độ khách không lưu hồ sơ của bạn.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ],
                   ),
                 ),
