@@ -34,6 +34,7 @@ migrate_working_dir/
 .env
 .env.*
 run-local.ps1
+.vscode/launch.json
 /coverage/
 
 # Symbolication related
