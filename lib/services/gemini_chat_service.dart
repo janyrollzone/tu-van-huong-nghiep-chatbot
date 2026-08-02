@@ -38,8 +38,11 @@ class SupabaseChatService implements ChatService {
           )
           .timeout(const Duration(seconds: 35));
       if (result.status != 200 || result.data is! Map) {
-        throw const ChatServiceException(
-          'Trợ lý hiện không thể trả lời. Vui lòng thử lại.',
+        final message = result.data is Map
+            ? (result.data as Map)['error']?.toString()
+            : null;
+        throw ChatServiceException(
+          message ?? 'Trợ lý hiện không thể trả lời. Vui lòng thử lại.',
         );
       }
       final text = (result.data as Map)['text']?.toString().trim();

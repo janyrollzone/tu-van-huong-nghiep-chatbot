@@ -43,7 +43,11 @@ Deno.serve(async (request) => {
       }),
     },
   );
-  if (!response.ok) return json({ error: 'Gemini hiện không thể trả lời. Vui lòng thử lại.' }, 502, headers);
+  if (!response.ok) {
+    const detail = await response.text();
+    console.error('Gemini error', response.status, detail);
+    return json({ error: `Gemini từ chối yêu cầu (mã ${response.status}). Hãy kiểm tra API key và model.` }, 502, headers);
+  }
   const payload = await response.json();
   const text = payload.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? '').join('').trim();
   if (!text) return json({ error: 'Gemini chưa trả về nội dung. Vui lòng thử lại.' }, 502, headers);
