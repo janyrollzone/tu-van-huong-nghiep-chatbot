@@ -32,8 +32,9 @@ class _AuthPageState extends State<AuthPage> {
         setState(() => _error = e.message);
       }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = 'Không thể kết nối. Vui lòng thử lại.');
+      }
     } finally {
       if (mounted) setState(() => _loading = false);
     }
