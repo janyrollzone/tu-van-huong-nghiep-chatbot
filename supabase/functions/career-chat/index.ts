@@ -46,7 +46,7 @@ Deno.serve(async (request) => {
   if (!response.ok) {
     const detail = await response.text();
     console.error('Gemini error', response.status, detail);
-    return json({ error: `Gemini từ chối yêu cầu (mã ${response.status}). Hãy kiểm tra API key và model.` }, 502, headers);
+    return json({ error: `Gemini từ chối yêu cầu (mã ${response.status}): ${detail.slice(0, 500)}` }, 502, headers);
   }
   const payload = await response.json();
   const text = payload.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? '').join('').trim();
