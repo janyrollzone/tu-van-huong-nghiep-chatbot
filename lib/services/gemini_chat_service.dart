@@ -52,6 +52,11 @@ class SupabaseChatService implements ChatService {
         );
       }
       return text;
+    } on FunctionException catch (error) {
+      throw ChatServiceException(
+        error.details?.toString() ??
+            'Trợ lý hiện không thể trả lời. Vui lòng thử lại.',
+      );
     } on ChatServiceException {
       rethrow;
     } catch (_) {
