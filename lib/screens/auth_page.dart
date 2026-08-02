@@ -28,7 +28,9 @@ class _AuthPageState extends State<AuthPage> {
     try {
       await action();
     } on AuthException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) {
+        setState(() => _error = e.message);
+      }
     } catch (_) {
       if (mounted)
         setState(() => _error = 'Không thể kết nối. Vui lòng thử lại.');
@@ -59,14 +61,14 @@ class _AuthPageState extends State<AuthPage> {
               constraints: const BoxConstraints(maxWidth: 460),
               child: Card(
                 elevation: 0,
-                color: scheme.surface.withOpacity(.92),
+                color: scheme.surface.withValues(alpha: .92),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(32),
                   child: Column(
-                    crossAxisSize: MainAxisSize.min,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       CircleAvatar(
                         radius: 28,
