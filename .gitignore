@@ -33,6 +33,7 @@ migrate_working_dir/
 /build/
 .env
 .env.*
+run-local.ps1
 /coverage/
 
 # Symbolication related
