@@ -41,12 +41,13 @@ class _ChatPageState extends State<ChatPage> {
       final reply = await widget.chatService.reply(
         List.unmodifiable(_messages),
       );
-      if (mounted)
+      if (mounted) {
         setState(
           () => _messages.add(
             ChatMessage(author: MessageAuthor.model, text: reply),
           ),
         );
+      }
     } on ChatServiceException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
