@@ -7,8 +7,14 @@ import 'services/gemini_chat_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const url = String.fromEnvironment('SUPABASE_URL');
-  const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  const url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://msjkbaffmtjdpahbhwtr.supabase.co',
+  );
+  const anonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: 'sb_publishable_nqQHhaFN2MR5-nmZ2sTbqw_4hBcLV4X',
+  );
   if (url.isNotEmpty && anonKey.isNotEmpty) {
     await Supabase.initialize(url: url, publishableKey: anonKey);
   }
